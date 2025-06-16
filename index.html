@@ -149,6 +149,7 @@
             // 繪製多層六邊形
             const layers = 5; // 層數
             const layerSpacing = radius / layers; // 每層之間的間距
+            const scaleValues = [100, 80, 60, 40, 20, 0]; // 從內到外的數值
 
             for (let layer = 0; layer < layers; layer++) {
                 const currentRadius = radius - (layer * layerSpacing);
@@ -173,6 +174,17 @@
                 ctx.strokeStyle = `rgba(27, 94, 32, ${opacity})`;  // 深綠色邊框
                 ctx.lineWidth = 2;
                 ctx.stroke();
+
+                // 在每一層六邊形上標示半徑值
+                const scaleValue = scaleValues[layer];
+                const textX = centerX + currentRadius * Math.cos(Math.PI / 2);
+                const textY = centerY + currentRadius * Math.sin(Math.PI / 2);
+                
+                ctx.font = 'bold 16px "MingLiU", "細明體", sans-serif';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(scaleValue.toString(), textX, textY);
             }
 
             // 在中心點標示發
