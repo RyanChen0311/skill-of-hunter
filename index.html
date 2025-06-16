@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Hexagon</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+JP:wght@400;700&display=swap');
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            background: repeating-linear-gradient(
+                0deg,
+                #B0E0E6 0%,
+                #B0E0E6 10%,
+                #ADD8E6 10%,
+                #ADD8E6 20%
+            );
+            font-family: "MingLiU", "細明體", sans-serif;
+        }
+
+        .container {
+            display: flex;
+            align-items: center;
+            gap: 30px;
+        }
+
+        #canvas {
+            border: 2px solid rgba(0, 0, 0, 0.1);
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .controls {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            width: 200px;
+        }
+
+        .input-group {
+            margin: 10px 0;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 8px;
+        }
+
+        .input-group label {
+            color: white;
+            display: block;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .text-input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            color: black;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-family: "MingLiU", "細明體", sans-serif;
+        }
+
+        .text-input:focus {
+            outline: none;
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(0, 0, 0, 0.4);
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .text-input::placeholder {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        .title-input {
+            font-size: 14px;
+            font-weight: normal;
+            margin-bottom: 15px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.15);
+            font-family: "MingLiU", "細明體", sans-serif;
+        }
+
+        .title-input:focus {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas" width="800" height="600"></canvas>
+        <div class="controls">
+            <div class="input-group">
+                <input type="text" id="sectionTitle" class="text-input title-input" value="念能力" placeholder="念能力">
+                <input type="text" id="label1" class="text-input" placeholder="Point 1">
+                <input type="text" id="label2" class="text-input" placeholder="Point 2">
+                <input type="text" id="label3" class="text-input" placeholder="Point 3">
+                <input type="text" id="label4" class="text-input" placeholder="Point 4">
+                <input type="text" id="label5" class="text-input" placeholder="Point 5">
+                <input type="text" id="label6" class="text-input" placeholder="Point 6">
+                <input type="text" id="label7" class="text-input" placeholder="Center Point">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Main hexagon properties
+        const centerX = canvas.width / 2;
+        const centerY = canvas.height / 2;
+        const radius = 200;
+        
+        // Points array to store the 6 adjustable points and center point
+        let points = [];
+        let centerPoint = { x: centerX, y: centerY };
+        let selectedPoint = null;
+        let isDragging = false;
+
+        // Initialize points in a hexagonal pattern
+        function initializePoints() {
+            points = [];
+            for (let i = 0; i < 6; i++) {
+                const angle = (i * Math.PI * 2) / 6;
+                const x = centerX + radius * 0.5 * Math.cos(angle);
+                const y = centerY + radius * 0.5 * Math.sin(angle);
+                points.push({ x, y });
+            }
+        }
+
+        // Draw the main hexagon
+        function drawMainHexagon() {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 繪製多層六邊形
+            const layers = 5; // 層數
+            const layerSpacing = radius / layers; // 每層之間的間距
+
+            for (let layer = 0; layer < layers; layer++) {
+                const currentRadius = radius - (layer * layerSpacing);
+                ctx.beginPath();
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * Math.PI * 2) / 6;
+                    const x = centerX + currentRadius * Math.cos(angle);
+                    const y = centerY + currentRadius * Math.sin(angle);
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+                ctx.closePath();
+                // 根據層數調整透明度
+                const opacity = 0.8 - (layer * 0.15);
+                // 填充六邊形
+                ctx.fillStyle = `rgba(27, 94, 32, ${opacity * 0.3})`;  // 深綠色填充
+                ctx.fill();
+                // 繪製邊框
+                ctx.strokeStyle = `rgba(27, 94, 32, ${opacity})`;  // 深綠色邊框
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+
+            // 在中心點標示發
+            const centerInput = document.getElementById('label7');
+            const centerLabel = centerInput.value || '発';
+            ctx.font = 'bold 16px "MingLiU", "細明體", sans-serif';
+            ctx.fillStyle = '#FF0000';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(centerLabel, centerX, centerY);
+
+            // Draw labels for points
+            const defaultLabels = ["変化系", "具現化系", "特質系", "操作系", "放出系", "強化系"];
+            for (let i = 0; i < points.length; i++) {
+                const input = document.getElementById(`label${i + 1}`);
+                const label = input.value || defaultLabels[i];
+                const angle = (i * Math.PI * 2) / 6;
+                const x = points[i].x + Math.cos(angle) * 45;
+                const y = points[i].y + Math.sin(angle) * 45;
+                
+                ctx.font = '21px "MingLiU", "細明體", sans-serif';
+                ctx.fillStyle = 'black';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(label, x, y);
+            }
+        }
+
+        // Draw connections between points
+        function drawConnections() {
+            // Fill the hexagon
+            ctx.beginPath();
+            for (let i = 0; i < points.length; i++) {
+                if (i === 0) {
+                    ctx.moveTo(points[i].x, points[i].y);
+                } else {
+                    ctx.lineTo(points[i].x, points[i].y);
+                }
+            }
+            ctx.closePath();
+            ctx.fillStyle = 'rgba(76, 175, 80, 0.9)';  // 草綠色
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(56, 142, 60, 0.7)';  // 深一點的草綠色邊框
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+
+        // Draw the adjustable points
+        function drawPoints() {
+            // Draw outer points
+            points.forEach((point, index) => {
+                ctx.beginPath();
+                ctx.arc(point.x, point.y, 8, 0, Math.PI * 2);
+                ctx.fillStyle = '#ff4444';
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+        }
+
+        // Draw everything
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawMainHexagon();
+            drawConnections();
+            drawPoints();
+        }
+
+        // Check if a point is on the correct side of the edges
+        function isOnCorrectSide(point, pointIndex) {
+            const prevIndex = (pointIndex - 1 + 6) % 6;
+            const nextIndex = (pointIndex + 1) % 6;
+            
+            // Get the two edges to check
+            const edge1 = {
+                start: points[prevIndex],
+                end: points[pointIndex]
+            };
+            const edge2 = {
+                start: points[pointIndex],
+                end: points[nextIndex]
+            };
+
+            // Function to check if point is on the correct side of an edge
+            function isOnCorrectSideOfEdge(point, edge) {
+                const crossProduct = (edge.end.x - edge.start.x) * (point.y - edge.start.y) - 
+                                   (edge.end.y - edge.start.y) * (point.x - edge.start.x);
+                // For pointIndex 0, we want crossProduct >= 0
+                // For pointIndex 1, we want crossProduct <= 0
+                // And so on...
+                return pointIndex % 2 === 0 ? crossProduct >= 0 : crossProduct <= 0;
+            }
+
+            // Check both edges
+            return isOnCorrectSideOfEdge(point, edge1) && isOnCorrectSideOfEdge(point, edge2);
+        }
+
+        // Handle mouse events for dragging points
+        canvas.addEventListener('mousedown', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            points.forEach((point, index) => {
+                const dx = point.x - x;
+                const dy = point.y - y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < 10) {
+                    selectedPoint = index;
+                    isDragging = true;
+                }
+            });
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (isDragging && selectedPoint !== null) {
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                // Calculate the angle and distance from center
+                const dx = x - centerPoint.x;
+                const dy = y - centerPoint.y;
+                const angle = Math.atan2(dy, dx);
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                // Update point position relative to center
+                points[selectedPoint].x = centerPoint.x + distance * Math.cos(angle);
+                points[selectedPoint].y = centerPoint.y + distance * Math.sin(angle);
+                draw();
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDragging = false;
+            selectedPoint = null;
+        });
+
+        // Add event listeners for label inputs
+        for (let i = 1; i <= 7; i++) {
+            const input = document.getElementById(`label${i}`);
+            if (i === 7) {
+                input.placeholder = '発';
+            } else {
+                const defaultLabels = ["変化系", "具現化系", "特質系", "操作系", "放出系", "強化系"];
+                input.placeholder = defaultLabels[i - 1];
+            }
+            // Ensure input fields are responsive to changes
+            input.addEventListener('input', () => {
+                draw();
+            });
+            input.addEventListener('change', () => {
+                draw();
+            });
+            input.addEventListener('focus', () => {
+                input.style.background = 'rgba(255, 255, 255, 0.2)';
+            });
+            input.addEventListener('blur', () => {
+                input.style.background = 'rgba(255, 255, 255, 0.1)';
+            });
+        }
+
+        // Initialize the canvas
+        initializePoints();
+        draw();
+    </script>
+</body>
+</html> 
