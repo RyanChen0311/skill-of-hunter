@@ -96,6 +96,23 @@
         .title-input:focus {
             background: rgba(255, 255, 255, 0.25);
         }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                gap: 15px;
+            }
+
+            .controls {
+                width: 90%;
+                max-width: 300px;
+            }
+
+            #canvas {
+                width: 100%;
+                height: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -119,19 +136,49 @@
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
         
-        // Main hexagon properties
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const radius = 200;
-        
-        // Points array to store the 6 adjustable points and center point
+        let canvasWidth, canvasHeight, centerX, centerY, radius;
         let points = [];
-        let centerPoint = { x: centerX, y: centerY };
+        let centerPoint = {};
         let selectedPoint = null;
         let isDragging = false;
 
+        function resizeCanvas() {
+            const container = document.querySelector('.container');
+            const style = getComputedStyle(container);
+            const containerWidth = container.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+            
+            let newWidth = Math.min(containerWidth, 800);
+            
+            if (window.innerWidth <= 768) {
+                newWidth = containerWidth * 0.9;
+            }
+
+            const newHeight = newWidth * 0.75;
+
+            canvas.style.width = newWidth + 'px';
+            canvas.style.height = newHeight + 'px';
+
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = newWidth * dpr;
+            canvas.height = newHeight * dpr;
+            
+            ctx.scale(dpr, dpr);
+
+            canvasWidth = newWidth;
+            canvasHeight = newHeight;
+            
+            initializePoints();
+            draw();
+        }
+
         // Initialize points in a hexagonal pattern
         function initializePoints() {
+            // Recalculate properties based on current canvas size
+            centerX = canvasWidth / 2;
+            centerY = canvasHeight / 2;
+            radius = Math.min(canvasWidth, canvasHeight) * 0.4;
+            centerPoint = { x: centerX, y: centerY };
+
             points = [];
             for (let i = 0; i < 6; i++) {
                 const angle = (i * Math.PI * 2) / 6;
@@ -143,7 +190,6 @@
 
         // Draw the main hexagon
         function drawMainHexagon() {
-            const ctx = canvas.getContext('2d');
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
             // 繪製多層六邊形
@@ -286,8 +332,8 @@
         // Handle mouse events for dragging points
         canvas.addEventListener('mousedown', (e) => {
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+            const x = (e.clientX - rect.left) * (canvas.width / canvas.offsetWidth / (window.devicePixelRatio || 1));
+            const y = (e.clientY - rect.top) * (canvas.height / canvas.offsetHeight / (window.devicePixelRatio || 1));
 
             points.forEach((point, index) => {
                 const dx = point.x - x;
@@ -304,8 +350,8 @@
         canvas.addEventListener('mousemove', (e) => {
             if (isDragging && selectedPoint !== null) {
                 const rect = canvas.getBoundingClientRect();
-                const x = e.clientX - rect.left;
-                const y = e.clientY - rect.top;
+                const x = (e.clientX - rect.left) * (canvas.width / canvas.offsetWidth / (window.devicePixelRatio || 1));
+                const y = (e.clientY - rect.top) * (canvas.height / canvas.offsetHeight / (window.devicePixelRatio || 1));
 
                 // Calculate the angle and distance from center
                 const dx = x - centerPoint.x;
@@ -350,8 +396,8 @@
         }
 
         // Initialize the canvas
-        initializePoints();
-        draw();
+        document.addEventListener('DOMContentLoaded', resizeCanvas);
+        window.addEventListener('resize', resizeCanvas);
     </script>
 </body>
 </html> 
